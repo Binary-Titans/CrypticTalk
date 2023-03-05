@@ -24,7 +24,7 @@ app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(session({
-    secret: session_secret,
+    secret: 'JpkkmmQtmy/cPJ7wMnFbHzRNd2w=',
     resave: false,
     saveUninitialized: false
     // cookie: { secure: true }
@@ -33,7 +33,7 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-mongoose.connect(process.env.DB_KEY);
+mongoose.connect('mongodb+srv://mustafatayyard:bVNqHH541VzlU7t3@cryptictalk.z1rvt8q.mongodb.net/test');
 
 const userSkeliton = new mongoose.Schema({
     email: String,
