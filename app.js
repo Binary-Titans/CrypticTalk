@@ -3,6 +3,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
+const crypto = require('crypto');
 const session = require('express-session');
 const passport = require("passport");
 const passportLocalMongoose = require("passport-local-mongoose");
@@ -15,6 +16,38 @@ function timestamp() {
     let ISTTime = new Date(d.getTime() + (330 + d.getTimezoneOffset()) * 60000);
     let timeStamp = `[${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][ISTTime.getDay()]} ${ISTTime.getHours() % 12 || 12}:${ISTTime.getMinutes()} ${ISTTime.getHours() >= 12 ? "PM" : "AM"} ${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()} IST]`;
     return timeStamp;
+}
+
+const algorithm = 'aes-256-cbc';
+ 
+const key = crypto.randomBytes(32);
+ 
+const iv = crypto.randomBytes(16);
+ 
+function encrypt(text) {
+    let cipher = crypto.createCipheriv(algorithm, Buffer.from(key), iv);
+    let encrypted = cipher.update(text);
+    encrypted = Buffer.concat([encrypted, cipher.final()]);
+
+    // return encrypted.toString('hex');
+
+    return { iv: iv.toString('hex'),
+    encryptedData: encrypted.toString('hex') };
+}
+ 
+// var encrypted = encrypt("Hello World!");
+ 
+function decrypt(text) {
+    console.log("inside decrypt: " + text);
+    let iv = Buffer.from(text.iv, 'hex');
+    let encryptedText = Buffer.from(text.encryptedData, 'hex');
+ 
+    let decipher = crypto.createDecipheriv(algorithm, Buffer.from(key), iv);
+ 
+    let decrypted = decipher.update(encryptedText);
+    decrypted = Buffer.concat([decrypted, decipher.final()]);
+ 
+    return decrypted.toString();
 }
 
 const session_secret = process.env.SESSION_SECRET; 
@@ -86,7 +119,7 @@ app.get("/logout", (req, res) => {
     req.logout((err) => {
         if (err) {
             console.log(err);
-            res.send("Something went wrong! Kindy retry or conatct subhranshu choudhury.")
+            res.send("Something went wrong! Kindy retry")
         } else {
             res.redirect("/");
 
@@ -180,9 +213,10 @@ app.get("/chat/:roomName/:roomPassword", (req, res) => {
 app.post("/chat/:roomName/:roomPassword", (req, res) => {
 
     if (req.isAuthenticated()) {
-        const message = req.body.message;
+        const message = encrypt(req.body.message).encryptedData;
+        const salt = encrypt(req.body.message).iv;
         const username = req.user.username;
-        Room.updateOne({ roomname: req.params.roomName, password: req.params.roomPassword }, { $push: { messages: `${timestamp()}<br><i>[${username}]</i> :- <b>${message}</b>` } }, (err) => {
+        Room.updateOne({ roomname: req.params.roomName, password: req.params.roomPassword }, { $push: { messages: `${timestamp()}<br><i>[${username}]</i> :- <b>${message}?${salt}</b>` } }, (err) => {
             if (err) {
                 res.send(err);
             } else {
@@ -243,7 +277,25 @@ app.post("/delete-room", (req, res) => {
             res.render("result", { message: "Room has been deleted successfully." })
         }
     })
-})
+});
+
+// app.get("/messages/:roomName/:roomPassword", (req, res) => {
+//     const roomName = req.params.roomName;
+//     const roomPassword = req.params.roomPassword;
+
+//     Room.findOne({ roomname: roomName, password: roomPassword }, (err, message) => {
+//         if (message) {
+//             res.send(message.messages);
+
+//         } else {
+//             if (err) {
+//                 res.send(err);
+//             } else {
+//                 res.render("result", { message: "No room matched. Recheck Room Name & Room Password." });
+//             }
+//         }
+//     });
+// });
 
 app.get("/messages/:roomName/:roomPassword", (req, res) => {
     const roomName = req.params.roomName;
@@ -251,7 +303,22 @@ app.get("/messages/:roomName/:roomPassword", (req, res) => {
 
     Room.findOne({ roomname: roomName, password: roomPassword }, (err, message) => {
         if (message) {
-            res.send(message.messages);
+            const userMessages = message.messages;
+            const messages = [];
+            for (let i = 0; i < userMessages.length; i++) {
+                var msg = userMessages[i];
+                console.log(msg)
+                var encryptedMsg = msg.substring(msg.indexOf("-") + 5, msg.indexOf("?"));
+                console.log("enc msg: " + encryptedMsg);
+                var salt = msg.substring(msg.indexOf("?")+1, msg.length-4);
+                console.log("salf: " + salt);
+                var encryption = {iv: salt, encryptedData: encryptedMsg};
+                var decryptedMsg = decrypt(encryption);
+                // console.log(decryptedMsg.iv);
+                messages.push(decryptedMsg);
+              }
+            console.log(messages); 
+            res.send(messages);
 
         } else {
             if (err) {
@@ -263,8 +330,6 @@ app.get("/messages/:roomName/:roomPassword", (req, res) => {
     });
 });
 
-
-
-app.listen(process.env.PORT || 8080, () => {
-    console.log("===> Live at port 8080")
+app.listen(3000, () => {
+    console.log("===> Live at port 3000")
 });
