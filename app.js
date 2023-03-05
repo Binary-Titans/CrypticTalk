@@ -33,7 +33,7 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-mongoose.connect(`mongodb+srv://admin_subhranshu:${process.env.DB_KEY}@cluster0.one0j.mongodb.net/anonymousChat`);
+mongoose.connect(`mongodb+srv://ngotdb0901:jVhfelU4NRSjoReU@hthchatapp.bofzi7u.mongodb.net/?retryWrites=true&w=majority`);
 
 const userSkeliton = new mongoose.Schema({
     email: String,
