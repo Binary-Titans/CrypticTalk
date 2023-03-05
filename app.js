@@ -24,7 +24,7 @@ app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(session({
-    secret: process.env.SECRET_KEY,
+    secret: "s",
     resave: false,
     saveUninitialized: false
     // cookie: { secure: true }
@@ -86,7 +86,7 @@ app.get("/logout", (req, res) => {
     req.logout((err) => {
         if (err) {
             console.log(err);
-            res.send("Something went wrong! Kindy retry or conatct subhranshu choudhury.")
+            res.send("Something went wrong! Kindy retry or contact our team.")
         } else {
             res.redirect("/");
 
@@ -217,7 +217,7 @@ app.post("/join-room", (req, res) => {
                 if (err) {
                     res.send(err);
                 } else {
-                    res.render("result", { message: "Room Name or Room Password mismatched. Kindly Recheck." });
+                    res.render("result", { message: "Room Name or Room Password mismatched. Kindly recheck." });
                 }
             }
         });
