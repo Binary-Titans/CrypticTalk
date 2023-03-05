@@ -1,5 +1,5 @@
 # From the base image node
-FROM node:18-alpine
+FROM node:14-slim
 WORKDIR /CrypticTalk
 ENV NODE_ENV=production
 
@@ -14,7 +14,7 @@ RUN npm ci --only=production
 COPY . .
 
 # Expose the port
-EXPOSE 8080
+EXPOSE 80
 
 # Command to execute when the image is instantiated
 CMD [ "node", "app.js" ]
